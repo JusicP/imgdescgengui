@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QGroupBox, QFormLayout, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QGroupBox, QFormLayout, QLabel, QVBoxLayout, QScrollArea
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
@@ -24,14 +24,25 @@ class ImageDetailsWidget(QWidget):
         )
         self._image_exif_description = QLabel("(null)")
         self._image_exif_description.setWordWrap(True)
+        self._image_resolution = QLabel()
 
         box_layout = QFormLayout()
         box_layout.addRow(QLabel("Filename: "), self._image_filename_label)
         box_layout.addRow(QLabel("Path: "), self._image_fullpath_label)
+        box_layout.addRow(QLabel("Resolution: "), self._image_resolution)
         box_layout.addRow(QLabel("Thumbnail: "), self._image_widget)
         box_layout.addRow(QLabel("EXIF:ImageDescription: "), self._image_exif_description)
         box_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
-        self._image_desc_box.setLayout(box_layout)
+
+        scroll_area = QScrollArea()
+        scroll_widget = QWidget()
+        scroll_widget.setLayout(box_layout)
+        scroll_area.setWidget(scroll_widget)
+        scroll_area.setWidgetResizable(True)
+        
+        scroll_layout = QVBoxLayout()
+        scroll_layout.addWidget(scroll_area)
+        self._image_desc_box.setLayout(scroll_layout)
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self._image_desc_box)
@@ -42,6 +53,8 @@ class ImageDetailsWidget(QWidget):
         self._image_fullpath_label.setText(image_fullpath)
 
         pixmap = QPixmap(image_fullpath)
+        image_resoulution = pixmap.size()
+        self._image_resolution.setText(f"{image_resoulution.width()} x {image_resoulution.height()}")
 
         # scale pixmap to fit bounds with keeping aspect ratio
         scaled_pixmap = pixmap.scaled(

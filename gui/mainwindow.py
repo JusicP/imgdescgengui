@@ -2,7 +2,7 @@ from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
                                QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QWidget,
-                               QPushButton, QGroupBox, QLabel, QLineEdit)
+                               QPushButton, QGroupBox, QLabel, QLineEdit, QSizePolicy)
 
 from gui.imagedetails import ImageDetailsWidget
 from gui.settingsdialog import SettingsDialog
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.vLayout.addLayout(self.hLayout)
         self.window.setLayout(self.vLayout)
 
-        self.setFixedSize(800, 500)
+        self.setFixedSize(1000, 500)
         self.statusBar().setSizeGripEnabled(False)
         self.setWindowTitle("Image description generator")
 

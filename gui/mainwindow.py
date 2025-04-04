@@ -1,3 +1,4 @@
+import os
 from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
@@ -67,21 +68,24 @@ class MainWindow(QMainWindow):
         if item.isSelected():
             image_filename = item.text()
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
+            if image_fullpath == None:
+                image_fullpath = item.text()
+                image_filename = os.path.basename(image_fullpath)
+
             self.createImageDetails(image_filename, image_fullpath)
 
     def getSelectedImage(self, image_fullpath: str):
         for i in range(self.selected_image_list_widget.count()):
             item = self.selected_image_list_widget.item(i)
-            if image_fullpath == item.data(Qt.ItemDataRole.UserRole):
+            if image_fullpath == item.text():
                 return item, i
 
     def imageChanged(self, item: QListWidgetItem):
         if item.checkState() == Qt.CheckState.Checked:
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
             if self.getSelectedImage(image_fullpath) == None:
-                item = QListWidgetItem(item.text())
+                item = QListWidgetItem(image_fullpath)
                 item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-                item.setData(Qt.ItemDataRole.UserRole, image_fullpath)
                 self.selected_image_list_widget.addItem(item)
         elif item.checkState() == Qt.CheckState.Unchecked:
             image_row = self.getSelectedImage(item.data(Qt.ItemDataRole.UserRole))

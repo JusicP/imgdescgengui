@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QGroupBox, QFormLayout, QLabel, QVBoxLayout, QScrollArea
+from PySide6.QtWidgets import QWidget, QGroupBox, QFormLayout, QLabel, QVBoxLayout, QScrollArea, QTextEdit, QLineEdit
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
@@ -13,17 +13,18 @@ class ImageDetailsWidget(QWidget):
 
         self.setMaximumWidth(512)
 
+        self._image_fullpath = None
         self._image_desc_box = QGroupBox("Image details")
 
-        self._image_filename_label = QLabel()
-        self._image_fullpath_label = QLabel()
+        self._image_filename_label = QLineEdit(readOnly=True)
+        self._image_fullpath_label = QLineEdit(readOnly=True)
         self._image_widget = QLabel()
         self._image_widget.setMaximumSize(
             ImageDetailsWidget.MAX_THUMBNAIL_WIDTH,
             ImageDetailsWidget.MAX_THUMBNAIL_HEIGHT
         )
-        self._image_exif_description = QLabel("(null)")
-        self._image_exif_description.setWordWrap(True)
+        self._image_exif_description = QTextEdit("(null)", readOnly=True)
+        #self._image_exif_description.setWordWrap(True)
         self._image_resolution = QLabel()
 
         box_layout = QFormLayout()
@@ -49,6 +50,8 @@ class ImageDetailsWidget(QWidget):
         self.setLayout(main_layout)
 
     def setImage(self, image_filename: str, image_fullpath: str):
+        self._image_fullpath = image_fullpath
+
         self._image_filename_label.setText(image_filename)
         self._image_fullpath_label.setText(image_fullpath)
 
@@ -70,3 +73,5 @@ class ImageDetailsWidget(QWidget):
         if "EXIF:ImageDescription" in metadata[0]:
             self._image_exif_description.setText(metadata[0]["EXIF:ImageDescription"])
 
+    def getImageFullpath(self):
+        return self._image_fullpath

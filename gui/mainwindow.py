@@ -154,7 +154,9 @@ class MainWindow(QMainWindow):
             self._image_details_widget = ImageDetailsWidget()
             self.hLayout.addWidget(self._image_details_widget)
 
-        self._image_details_widget.setImage(image_filename, image_fullpath)
+        # don't set the same image
+        if image_fullpath != self._image_details_widget.getImageFullpath():
+            self._image_details_widget.setImage(image_filename, image_fullpath)
 
     def createImageLists(self):
         image_list_box = QGroupBox("Image list from directory")

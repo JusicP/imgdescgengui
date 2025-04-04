@@ -3,7 +3,7 @@ from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
                                QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QWidget,
-                               QPushButton, QGroupBox, QLabel, QLineEdit, QSizePolicy)
+                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu)
 
 from gui.imagedetails import ImageDetailsWidget
 from gui.settingsdialog import SettingsDialog
@@ -127,6 +127,29 @@ class MainWindow(QMainWindow):
         dlg = SettingsDialog()
         dlg.exec()
 
+    def openSelectedImageContextMenu(self, position):
+        item = self.selected_image_list_widget.itemAt(position)
+        if item is None:
+            return
+
+        menu = QMenu(self)
+        remove_action = QAction("Remove from list", self)
+        remove_action.triggered.connect(lambda: self.removeSelectedItem(item))
+        menu.addAction(remove_action)
+
+        menu.exec(self.selected_image_list_widget.viewport().mapToGlobal(position))
+
+    def removeSelectedItem(self, item):
+        row = self.selected_image_list_widget.row(item)
+        self.selected_image_list_widget.takeItem(row)
+
+        # uncheck the item in the image list widget
+        for i in range(self.image_list_widget.count()):
+            image_item = self.image_list_widget.item(i)
+            if image_item.data(Qt.ItemDataRole.UserRole) == item.text():
+                image_item.setCheckState(Qt.CheckState.Unchecked)
+                break
+
     def createFooterButtons(self):
         self.generate_img_desc_button = QPushButton()
         self.generate_img_desc_button.clicked.connect(self.generateImageDesc)
@@ -204,6 +227,8 @@ class MainWindow(QMainWindow):
 
         self.selected_image_list_widget = QListWidget()
         self.selected_image_list_widget.itemClicked.connect(self.imageClicked)
+        self.selected_image_list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.selected_image_list_widget.customContextMenuRequested.connect(self.openSelectedImageContextMenu)
         layout.addWidget(self.selected_image_list_widget)
         
         image_list_box.setLayout(layout)

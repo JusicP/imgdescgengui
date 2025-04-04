@@ -51,7 +51,7 @@ class ImageDetailsWidget(QWidget):
         )
         self._image_widget.setPixmap(scaled_pixmap)
 
-        image = Image(image_fullpath, None)
+        image = Image(image_fullpath)
         metadata = image.read_metadata()
 
         if "EXIF:ImageDescription" in metadata[0]:

@@ -9,7 +9,7 @@ from gui.settingsdialog import SettingsDialog
 
 from imgdescgenlib.chatbot.gemini import GeminiClient
 from imgdescgenlib.imgdescgen import ImgDescGen
-from imgdescgenlib.exceptions import ImageToolException
+from imgdescgenlib.exceptions import ImgDescGenBaseException
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -26,9 +26,8 @@ class MainWindow(QMainWindow):
         self.vLayout.addLayout(self.hLayout)
         self.window.setLayout(self.vLayout)
 
-        # TODO: disable window dynamic resizing (read that it's problematic on windows 10+)
-
-        self.resize(800, 500)
+        self.setFixedSize(800, 500)
+        self.statusBar().setSizeGripEnabled(False)
         self.setWindowTitle("Image description generator")
 
         self.createFooterButtons()
@@ -41,6 +40,8 @@ class MainWindow(QMainWindow):
         dir = QFileDialog.getExistingDirectory(self)
         if not dir:
             return
+
+        self._input_path_line_edit.setText(dir)
 
         # refill listwidget with new images
         self.image_list_widget.clear()
@@ -56,7 +57,6 @@ class MainWindow(QMainWindow):
             self.image_list_widget.addItem(item)
 
             item.setCheckState(Qt.CheckState.Checked if self.getSelectedImage(image_fullpath) else Qt.CheckState.Unchecked)
-
 
     def setImagesCheckState(self, state: Qt.CheckState):
         for i in range(self.image_list_widget.count()):
@@ -100,8 +100,8 @@ class MainWindow(QMainWindow):
 
         try:
             self._img_desc_gen.generate_image_description(image_list, self._output_path_line_edit.text())
-        except ImageToolException:
-            ...
+        except ImgDescGenBaseException:
+            QMessageBox(title="Error", text="Fucked up")
 
     def onOutputPathChanged(self):
         # enable generate button if output path is not empty
@@ -157,17 +157,36 @@ class MainWindow(QMainWindow):
         self._image_details_widget.setImage(image_filename, image_fullpath)
 
     def createImageLists(self):
-        # create image list
         image_list_box = QGroupBox("Image list from directory")
 
         layout = QVBoxLayout()
+        image_list_box.setLayout(layout)
+
+        layout.addWidget(QLabel("Go to File -> Select image directory to get a list of images"))
+
+        # create input directory field
+        input_directory_layout = QHBoxLayout()
+        layout.addLayout(input_directory_layout)
+
+        input_path_label = QLabel("Input path")
+        input_directory_layout.addWidget(input_path_label)
+
+        self._input_path_line_edit = QLineEdit()
+        # TODO: don't allow to edit input path manually, do it from browse dialog
+        #input_path_line_edit.textChanged.connect(self.onInputPathChanged)
+        input_directory_layout.addWidget(self._input_path_line_edit)
+
+        browse_input_directory = QPushButton()
+        browse_input_directory.clicked.connect(self.selectImageDirectory)
+        browse_input_directory.setMaximumWidth(196)
+        browse_input_directory.setText("Browse")
+        input_directory_layout.addWidget(browse_input_directory)
+
+        # create image list
         self.image_list_widget = QListWidget()
         self.image_list_widget.itemClicked.connect(self.imageClicked)
-        layout.addWidget(QLabel("Go to File -> Select image directory to get a list of images"))
         layout.addWidget(self.image_list_widget)
 
-        image_list_box.setLayout(layout)
-        
         self.image_list_widget.itemChanged.connect(self.imageChanged)
         self.hLayout.addWidget(image_list_box)
 

@@ -6,13 +6,16 @@ from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
                                QPushButton, QGroupBox, QLabel, QLineEdit, QMenu)
 
 from gui.imagedetails import ImageDetailsWidget
+from gui.schemas.config import ImgDescGenConfig
 from gui.settingsdialog import SettingsDialog
 
-from imgdescgenlib.chatbot.gemini import GeminiClient
+from imgdescgenlib.chatbot.gemini.gemini import GeminiClient
 from imgdescgenlib.imgdescgen import ImgDescGen
 from imgdescgenlib.exceptions import ImgDescGenBaseException
 
 class MainWindow(QMainWindow):
+    CONFIG_FILENAME = "config.json"
+
     def __init__(self):
         super(MainWindow, self).__init__()
 
@@ -31,18 +34,37 @@ class MainWindow(QMainWindow):
         self.statusBar().setSizeGripEnabled(False)
         self.setWindowTitle("Image description generator")
 
+        self._config = ImgDescGenConfig(MainWindow.CONFIG_FILENAME)
+
         self.createFooterButtons()
         self.createImageLists()
         self.createActions()
         self.createMenus()
         self.createStatusBar()
 
-    def selectImageDirectory(self):
-        dir = QFileDialog.getExistingDirectory(self)
-        if not dir:
-            return
+        self.restoreSelectedImages()
+    
+    def saveConfig(self):
+        if self._config.saveConfig(MainWindow.CONFIG_FILENAME) == False:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to save configuration"))
 
-        self._input_path_line_edit.setText(dir)
+    def createImageItem(self, filename: str, fullpath: str, flag: Qt.ItemFlag):
+        item = QListWidgetItem(filename if filename else fullpath)
+        item.setFlags(flag)
+        if filename:
+            item.setData(Qt.ItemDataRole.UserRole, fullpath)
+        return item
+
+    def selectImageDirectory(self, dir = None):
+        if dir == None:
+            dir = QFileDialog.getExistingDirectory(self)
+            if not dir:
+                return
+
+            self._input_path_line_edit.setText(dir)
+
+            self._config.getSchema().input_dir = dir
+            self.saveConfig()
 
         # refill listwidget with new images
         self.image_list_widget.clear()
@@ -52,12 +74,14 @@ class MainWindow(QMainWindow):
         for image_filename in images:
             image_fullpath = directory.absoluteFilePath(image_filename)
 
-            item = QListWidgetItem(image_filename)
-            item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-            item.setData(Qt.ItemDataRole.UserRole, image_fullpath)
-            self.image_list_widget.addItem(item)
-
+            item = self.createImageItem(
+                image_filename, 
+                image_fullpath,
+                Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            )
             item.setCheckState(Qt.CheckState.Checked if self.getSelectedImage(image_fullpath) else Qt.CheckState.Unchecked)
+
+            self.image_list_widget.addItem(item)
 
     def setImagesCheckState(self, state: Qt.CheckState):
         for i in range(self.image_list_widget.count()):
@@ -79,13 +103,16 @@ class MainWindow(QMainWindow):
             item = self.selected_image_list_widget.item(i)
             if image_fullpath == item.text():
                 return item, i
-
+            
     def imageChanged(self, item: QListWidgetItem):
         if item.checkState() == Qt.CheckState.Checked:
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
             if self.getSelectedImage(image_fullpath) == None:
-                item = QListWidgetItem(image_fullpath)
-                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                item = self.createImageItem(
+                    None,
+                    image_fullpath,
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                )
                 self.selected_image_list_widget.addItem(item)
         elif item.checkState() == Qt.CheckState.Unchecked:
             image_row = self.getSelectedImage(item.data(Qt.ItemDataRole.UserRole))
@@ -93,23 +120,61 @@ class MainWindow(QMainWindow):
                 self.selected_image_list_widget.takeItem(image_row[1])
                 # TODO: clean image details if this item was selected
 
+
+        # save selected images to the config
+        selected_images = []
+        for i in range(self.selected_image_list_widget.count()):
+            item = self.selected_image_list_widget.item(i)
+            selected_images.append(item.text())
+
+        self._config.getSchema().selected_images = selected_images
+        self.saveConfig()
+
+    def restoreSelectedImages(self):
+        # restore selected images from the config
+        if self._config.getSchema().selected_images == None:
+            return
+        
+        for image_fullpath in self._config.getSchema().selected_images:
+            # find the item in the image list widget and set it to checked
+            # it should add also to the selected image list widget (imageChanged() will do that)
+            for i in range(self.image_list_widget.count()):
+                item = self.image_list_widget.item(i)
+                if image_fullpath == item.data(Qt.ItemDataRole.UserRole):
+                    item.setCheckState(Qt.CheckState.Checked)
+                    break
+
+            # if selected image not found in image list, add it to the selected image list manually
+            if self.getSelectedImage(image_fullpath) == None:
+                item = self.createImageItem(
+                    None,
+                    image_fullpath,
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                )
+                self.selected_image_list_widget.addItem(item)
+
     def generateImageDesc(self):
         image_list = []
         for i in range(self.selected_image_list_widget.count()):
             item = self.selected_image_list_widget.item(i)
-            image_list.append(item.data(Qt.ItemDataRole.UserRole))
+            image_list.append(item.text())
 
-        client = GeminiClient("123")
+        client = GeminiClient(self._config)
         self._img_desc_gen = ImgDescGen(client)
 
         try:
             self._img_desc_gen.generate_image_description(image_list, self._output_path_line_edit.text())
-        except ImgDescGenBaseException:
-            QMessageBox(title="Error", text="Fucked up")
+        except ImgDescGenBaseException: 
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to generate image description"))
+            return
+        
+        QMessageBox.information(self, self.tr("Success"), self.tr("Image description generated successfully"))
 
     def onOutputPathChanged(self):
         # enable generate button if output path is not empty
         self.generate_img_desc_button.setEnabled(len(self._output_path_line_edit.text()) > 0)
+        self._config.getSchema().output_dir = self._output_path_line_edit.text()
+        self.saveConfig()
 
     def browseOutputDirectory(self):
         dir = QFileDialog.getExistingDirectory(self)
@@ -124,7 +189,7 @@ class MainWindow(QMainWindow):
                 "with using Qt GUI library.")
 
     def openSettingsDialog(self):
-        dlg = SettingsDialog()
+        dlg = SettingsDialog(self._config)
         dlg.exec()
 
     def openSelectedImageContextMenu(self, position):
@@ -164,11 +229,12 @@ class MainWindow(QMainWindow):
 
         self._output_path_line_edit = QLineEdit()
         self._output_path_line_edit.textChanged.connect(self.onOutputPathChanged)
+        self._output_path_line_edit.setText(self._config.getSchema().output_dir)
+        self._output_path_line_edit.setReadOnly(True)
         layout.addWidget(self._output_path_line_edit)
 
-        self.onOutputPathChanged()
+        #self.onOutputPathChanged()
         self.vLayout.addWidget(self.generate_img_desc_button)
-        # TODO: fill output path with value saved in config
 
         browse_output_directory = QPushButton()
         browse_output_directory.clicked.connect(self.browseOutputDirectory)
@@ -201,8 +267,9 @@ class MainWindow(QMainWindow):
         input_directory_layout.addWidget(input_path_label)
 
         self._input_path_line_edit = QLineEdit()
-        # TODO: don't allow to edit input path manually, do it from browse dialog
-        #input_path_line_edit.textChanged.connect(self.onInputPathChanged)
+        input_dir = self._config.getSchema().input_dir
+        self._input_path_line_edit.setText(input_dir)
+        self._input_path_line_edit.setReadOnly(True)
         input_directory_layout.addWidget(self._input_path_line_edit)
 
         browse_input_directory = QPushButton()
@@ -234,6 +301,10 @@ class MainWindow(QMainWindow):
         image_list_box.setLayout(layout)
 
         self.hLayout.addWidget(image_list_box)
+
+        # load images from input dir
+        if input_dir:
+            self.selectImageDirectory(input_dir)
 
     def createActions(self):
         root = QFileInfo(__file__).absolutePath()

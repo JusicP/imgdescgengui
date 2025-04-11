@@ -163,7 +163,12 @@ class MainWindow(QMainWindow):
         self._img_desc_gen = ImgDescGen(client)
 
         try:
-            self._img_desc_gen.generate_image_description(image_list, self._output_path_line_edit.text())
+            self._img_desc_gen.generate_image_description(
+                image_list,
+                self._output_path_line_edit.text(),
+                True,
+                self._config.getSchema().exiftool_path,
+            )
         except ImgDescGenBaseException: 
             QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to generate image description"))
             return

@@ -11,6 +11,8 @@ class ImgDescGenConfigSchema(BaseModel):
     input_dir: str = ""
     output_dir: str = ""
     selected_images: list[str] | None = None
+    exiftool_path: str = ""
+    chatbot: str = ChatbotName.GEMINI
     chatbots: dict[str, GeminiConfig] = Field(default_factory=lambda: {
         ChatbotName.GEMINI: GeminiConfig(),
     })

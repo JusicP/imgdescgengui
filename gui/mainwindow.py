@@ -159,7 +159,7 @@ class MainWindow(QMainWindow):
             item = self.selected_image_list_widget.item(i)
             image_list.append(item.text())
 
-        client = GeminiClient(self._config)
+        client = GeminiClient(self._config.getSchema().chatbots[self._config.getSchema().chatbot])
         self._img_desc_gen = ImgDescGen(client)
 
         try:

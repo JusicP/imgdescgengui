@@ -55,18 +55,7 @@ class MainWindow(QMainWindow):
             item.setData(Qt.ItemDataRole.UserRole, fullpath)
         return item
 
-    def selectImageDirectory(self, dir = None):
-        if dir == None:
-            dir = QFileDialog.getExistingDirectory(self)
-            if not dir:
-                return
-
-            self._input_path_line_edit.setText(dir)
-
-            self._config.getSchema().input_dir = dir
-            self.saveConfig()
-
-        # refill listwidget with new images
+    def fillImageList(self, dir):
         self.image_list_widget.clear()
 
         directory = QDir(dir)
@@ -84,6 +73,18 @@ class MainWindow(QMainWindow):
             self.image_list_widget.addItem(item)
 
         self.image_count_label.setText(str(self.image_list_widget.count()))
+
+    def selectImageDirectory(self):
+        dir = QFileDialog.getExistingDirectory(self)
+        if not dir:
+            return
+
+        self._input_path_line_edit.setText(dir)
+
+        self._config.getSchema().input_dir = dir
+        self.saveConfig()
+
+        self.fillImageList(dir)
 
     def setImagesCheckState(self, state: Qt.CheckState):
         for i in range(self.image_list_widget.count()):
@@ -339,7 +340,7 @@ class MainWindow(QMainWindow):
 
         # load images from input dir
         if input_dir:
-            self.selectImageDirectory(input_dir)
+            self.fillImageList(input_dir)
 
     def createActions(self):
         root = QFileInfo(__file__).absolutePath()

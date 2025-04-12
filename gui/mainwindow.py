@@ -223,6 +223,12 @@ class MainWindow(QMainWindow):
 
         self.saveSelectedImages()
 
+    def selectedImageListKeyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            item = self.selected_image_list_widget.currentItem()
+            if item is not None:
+                self.removeSelectedItem(item)
+
     def createFooterButtons(self):
         self.generate_img_desc_button = QPushButton()
         self.generate_img_desc_button.clicked.connect(self.generateImageDesc)
@@ -304,6 +310,7 @@ class MainWindow(QMainWindow):
         self.selected_image_list_widget.itemClicked.connect(self.imageClicked)
         self.selected_image_list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.selected_image_list_widget.customContextMenuRequested.connect(self.openSelectedImageContextMenu)
+        self.selected_image_list_widget.keyPressEvent = self.selectedImageListKeyPressEvent
         layout.addWidget(self.selected_image_list_widget)
         
         image_list_box.setLayout(layout)

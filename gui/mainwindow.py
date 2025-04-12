@@ -3,7 +3,7 @@ from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
                                QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QWidget,
-                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu)
+                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu, QFormLayout)
 
 from gui.imagedetails import ImageDetailsWidget
 from gui.schemas.config import ImgDescGenConfig
@@ -83,6 +83,8 @@ class MainWindow(QMainWindow):
 
             self.image_list_widget.addItem(item)
 
+        self.image_count_label.setText(str(self.image_list_widget.count()))
+
     def setImagesCheckState(self, state: Qt.CheckState):
         for i in range(self.image_list_widget.count()):
             item = self.image_list_widget.item(i)
@@ -98,11 +100,11 @@ class MainWindow(QMainWindow):
 
             self.createImageDetails(image_filename, image_fullpath)
 
-    def getSelectedImage(self, image_fullpath: str):
+    def getSelectedImage(self, image_fullpath: str) -> QListWidgetItem | None:
         for i in range(self.selected_image_list_widget.count()):
             item = self.selected_image_list_widget.item(i)
             if image_fullpath == item.text():
-                return item, i
+                return item
             
     def saveSelectedImages(self):
         selected_images = []
@@ -120,20 +122,23 @@ class MainWindow(QMainWindow):
                 return
 
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
-            if self.getSelectedImage(image_fullpath) == None:
-                item = self.createImageItem(
-                    None,
-                    image_fullpath,
-                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-                )
-                self.selected_image_list_widget.addItem(item)
+            self.addSelectedImage(image_fullpath)
         elif item.checkState() == Qt.CheckState.Unchecked:
-            image_row = self.getSelectedImage(item.data(Qt.ItemDataRole.UserRole))
-            if image_row:
-                self.selected_image_list_widget.takeItem(image_row[1])
-                # TODO: clean image details if this item was selected
+            image_item = self.getSelectedImage(item.data(Qt.ItemDataRole.UserRole))
+            if image_item:
+                self.removeSelectedItem(image_item)
 
         self.saveSelectedImages()
+
+    def addSelectedImage(self, image_fullpath: str):
+        if self.getSelectedImage(image_fullpath) == None:
+            item = self.createImageItem(
+                None,
+                image_fullpath,
+                Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            )
+            self.selected_image_list_widget.addItem(item)
+            self.selected_image_count_label.setText(str(self.selected_image_list_widget.count()))
 
     def restoreSelectedImages(self):
         # restore selected images from the config
@@ -150,13 +155,7 @@ class MainWindow(QMainWindow):
                     break
 
             # if selected image not found in image list, add it to the selected image list manually
-            if self.getSelectedImage(image_fullpath) == None:
-                item = self.createImageItem(
-                    None,
-                    image_fullpath,
-                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-                )
-                self.selected_image_list_widget.addItem(item)
+            self.addSelectedImage(image_fullpath)
 
     def generateImageDesc(self):
         image_list = []
@@ -225,6 +224,7 @@ class MainWindow(QMainWindow):
     def removeSelectedItem(self, item):
         row = self.selected_image_list_widget.row(item)
         self.selected_image_list_widget.takeItem(row)
+        self.selected_image_count_label.setText(str(self.selected_image_list_widget.count()))
 
         # uncheck the item in the image list widget, if exists
         for i in range(self.image_list_widget.count()):
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
     def selectedImageListKeyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
             item = self.selected_image_list_widget.currentItem()
-            if item is not None:
+            if item:
                 self.removeSelectedItem(item)
 
     def createFooterButtons(self):
@@ -308,6 +308,10 @@ class MainWindow(QMainWindow):
         self.image_list_widget = QListWidget()
         self.image_list_widget.itemClicked.connect(self.imageClicked)
         layout.addWidget(self.image_list_widget)
+        image_count_layout = QFormLayout()
+        self.image_count_label = QLabel("0")
+        image_count_layout.addRow(QLabel("Images: "), self.image_count_label)
+        layout.addLayout(image_count_layout)
 
         self.image_list_widget.itemChanged.connect(self.imageChanged)
         self.hLayout.addWidget(image_list_box)
@@ -324,7 +328,11 @@ class MainWindow(QMainWindow):
         self.selected_image_list_widget.customContextMenuRequested.connect(self.openSelectedImageContextMenu)
         self.selected_image_list_widget.keyPressEvent = self.selectedImageListKeyPressEvent
         layout.addWidget(self.selected_image_list_widget)
-        
+        image_count_layout = QFormLayout()
+        self.selected_image_count_label = QLabel("0")
+        image_count_layout.addRow(QLabel("Images: "), self.selected_image_count_label)
+        layout.addLayout(image_count_layout)
+
         image_list_box.setLayout(layout)
 
         self.hLayout.addWidget(image_list_box)

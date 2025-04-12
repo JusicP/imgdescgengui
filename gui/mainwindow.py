@@ -115,6 +115,10 @@ class MainWindow(QMainWindow):
 
     def imageChanged(self, item: QListWidgetItem):
         if item.checkState() == Qt.CheckState.Checked:
+            if self.canSelectImage() == False:
+                item.setCheckState(Qt.CheckState.Unchecked)
+                return
+
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
             if self.getSelectedImage(image_fullpath) == None:
                 item = self.createImageItem(
@@ -209,6 +213,14 @@ class MainWindow(QMainWindow):
         menu.addAction(remove_action)
 
         menu.exec(self.selected_image_list_widget.viewport().mapToGlobal(position))
+
+    def canSelectImage(self) -> bool:
+        max_image_count = self._config.getSchema().chatbots[self._config.getSchema().chatbot].max_image_count
+        if self.selected_image_list_widget.count() >= max_image_count:
+            QMessageBox.warning(self, "Warning", f"You can select only {max_image_count} images")
+            return False
+        
+        return True
 
     def removeSelectedItem(self, item):
         row = self.selected_image_list_widget.row(item)

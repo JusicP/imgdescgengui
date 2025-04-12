@@ -104,6 +104,15 @@ class MainWindow(QMainWindow):
             if image_fullpath == item.text():
                 return item, i
             
+    def saveSelectedImages(self):
+        selected_images = []
+        for i in range(self.selected_image_list_widget.count()):
+            item = self.selected_image_list_widget.item(i)
+            selected_images.append(item.text())
+
+        self._config.getSchema().selected_images = selected_images
+        self.saveConfig()
+
     def imageChanged(self, item: QListWidgetItem):
         if item.checkState() == Qt.CheckState.Checked:
             image_fullpath = item.data(Qt.ItemDataRole.UserRole)
@@ -120,15 +129,7 @@ class MainWindow(QMainWindow):
                 self.selected_image_list_widget.takeItem(image_row[1])
                 # TODO: clean image details if this item was selected
 
-
-        # save selected images to the config
-        selected_images = []
-        for i in range(self.selected_image_list_widget.count()):
-            item = self.selected_image_list_widget.item(i)
-            selected_images.append(item.text())
-
-        self._config.getSchema().selected_images = selected_images
-        self.saveConfig()
+        self.saveSelectedImages()
 
     def restoreSelectedImages(self):
         # restore selected images from the config
@@ -213,12 +214,14 @@ class MainWindow(QMainWindow):
         row = self.selected_image_list_widget.row(item)
         self.selected_image_list_widget.takeItem(row)
 
-        # uncheck the item in the image list widget
+        # uncheck the item in the image list widget, if exists
         for i in range(self.image_list_widget.count()):
             image_item = self.image_list_widget.item(i)
             if image_item.data(Qt.ItemDataRole.UserRole) == item.text():
                 image_item.setCheckState(Qt.CheckState.Unchecked)
                 break
+
+        self.saveSelectedImages()
 
     def createFooterButtons(self):
         self.generate_img_desc_button = QPushButton()

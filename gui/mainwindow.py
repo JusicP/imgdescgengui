@@ -243,16 +243,16 @@ class MainWindow(QMainWindow):
                 self.removeSelectedItem(item)
 
     def createFooterButtons(self):
-        self.generate_img_desc_button = QPushButton()
-        self.generate_img_desc_button.clicked.connect(self.generateImageDesc)
-        self.generate_img_desc_button.setMaximumWidth(196)
-        self.generate_img_desc_button.setText("Generate image description")
-
         layout = QHBoxLayout()
         self.vLayout.addLayout(layout)
 
         output_path_label = QLabel("Output path")
         layout.addWidget(output_path_label)
+
+        self.generate_img_desc_button = QPushButton()
+        self.generate_img_desc_button.clicked.connect(self.generateImageDesc)
+        self.generate_img_desc_button.setMaximumWidth(196)
+        self.generate_img_desc_button.setText("Generate image description")
 
         self._output_path_line_edit = QLineEdit()
         self._output_path_line_edit.textChanged.connect(self.onOutputPathChanged)
@@ -261,13 +261,17 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._output_path_line_edit)
 
         #self.onOutputPathChanged()
-        self.vLayout.addWidget(self.generate_img_desc_button)
 
         browse_output_directory = QPushButton()
         browse_output_directory.clicked.connect(self.browseOutputDirectory)
         browse_output_directory.setMaximumWidth(196)
         browse_output_directory.setText("Browse")
         layout.addWidget(browse_output_directory)
+
+        footer_layout = QHBoxLayout()
+        footer_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.vLayout.addLayout(footer_layout)
+        footer_layout.addWidget(self.generate_img_desc_button)
 
     def createImageDetails(self, image_filename: str, image_fullpath: str):
         if self._image_details_widget == None:

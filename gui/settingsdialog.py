@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QComboBox, QHBoxLay
                                QFormLayout, QLineEdit, QTextEdit, QGroupBox, QPushButton, QFileDialog,
                                QMessageBox)
 
+from gui.chatbotfactory import create_chatbot
 from gui.schemas.config import ChatbotName, ImgDescGenConfig
 from imgdescgenlib.chatbot.gemini.gemini import GeminiConfig, GeminiClient
 from imgdescgenlib.chatbot.exceptions import ChatbotHttpRequestFailed
@@ -85,8 +86,9 @@ class SettingsDialog(QDialog):
     def refreshGeminiModels(self):
         gemini_config: GeminiConfig = self._config.getSchema().chatbots[ChatbotName.GEMINI].model_copy()
         gemini_config.api_key = self.api_key_line_edit.text()
-        client = GeminiClient(gemini_config)
-
+        
+        # TODO: make some geminiclient methods static idk to not create client every time 
+        client = create_chatbot(ChatbotName.GEMINI, gemini_config)
         try:
             response = client.get_available_models()
         except ChatbotHttpRequestFailed:

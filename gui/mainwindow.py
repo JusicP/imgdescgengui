@@ -3,15 +3,12 @@ from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
                                QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QWidget,
-                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu, QFormLayout)
+                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu, QFormLayout, QToolButton)
 
 from gui.imagedetails import ImageDetailsWidget
 from gui.schemas.config import ImgDescGenConfig
 from gui.settingsdialog import SettingsDialog
-
-from imgdescgenlib.chatbot.gemini.gemini import GeminiClient
-from imgdescgenlib.imgdescgen import ImgDescGen
-from imgdescgenlib.exceptions import ImgDescGenBaseException
+from gui.generationwindow import GenerationWindow
 
 class MainWindow(QMainWindow):
     CONFIG_FILENAME = "config.json"
@@ -20,8 +17,8 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
 
         self._image_details_widget = None
-        self._img_desc_gen = None
-
+        self._generation_window = None
+        
         self.window = QWidget()
         self.setCentralWidget(self.window)
 
@@ -164,21 +161,11 @@ class MainWindow(QMainWindow):
             item = self.selected_image_list_widget.item(i)
             image_list.append(item.text())
 
-        client = GeminiClient(self._config.getSchema().chatbots[self._config.getSchema().chatbot])
-        self._img_desc_gen = ImgDescGen(client)
-
-        try:
-            self._img_desc_gen.generate_image_description(
-                image_list,
-                self._output_path_line_edit.text(),
-                True,
-                self._config.getSchema().exiftool_path,
-            )
-        except ImgDescGenBaseException: 
-            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to generate image description"))
-            return
-        
-        QMessageBox.information(self, self.tr("Success"), self.tr("Image description generated successfully"))
+        if not self._generation_window:
+            self._generation_window = GenerationWindow(self._config)
+        self._generation_window.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self._generation_window.show()
+        self._generation_window.run(image_list)
 
     def onOutputPathChanged(self):
         # enable generate button if output path is not empty

@@ -1,14 +1,12 @@
 import logging
 
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QObject, Signal, QThread
-from PySide6.QtWidgets import (QWidget, QLabel, QVBoxLayout, QTextEdit, QApplication)
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QTextEdit, QApplication
 
 from gui.chatbotfactory import create_chatbot
 from gui.schemas.config import ImgDescGenConfig
 from imgdescgenlib.imgdescgen import ImgDescGen
-from imgdescgenlib.exceptions import ImgDescGenBaseException
-from imgdescgenlib.chatbot.gemini.gemini import GeminiConfig, GeminiClient
-from imgdescgenlib.chatbot.exceptions import ChatbotFailed
 
 class LoggingHandler(logging.Handler):
     """
@@ -63,6 +61,9 @@ class GenerationWindow(QWidget):
     def __init__(self, config: ImgDescGenConfig, parent=None):
         super(GenerationWindow, self).__init__(parent)
 
+        self.setWindowTitle("Generation")
+        self.setWindowIcon(QIcon("gui/icon_1024.png"))
+
         self._lib_log_handler = self.createLoggingHandler(self.LIB_PREFIX)
         self._client_log_handler = self.createLoggingHandler(self.CLIENT_PREFIX)
         logging.getLogger("imgdescgenlib").addHandler(self._lib_log_handler)
@@ -71,8 +72,6 @@ class GenerationWindow(QWidget):
         logging.getLogger("chatbotclient").setLevel(logging.DEBUG)
 
         self._config = config
-
-        self.setWindowTitle("Generation")
 
         layout = QVBoxLayout()
 

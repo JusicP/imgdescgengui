@@ -1,3 +1,4 @@
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QComboBox, QHBoxLayout, QDialogButtonBox,
                                QFormLayout, QLineEdit, QTextEdit, QGroupBox, QPushButton, QFileDialog,
                                QMessageBox, QCheckBox)
@@ -11,6 +12,7 @@ class SettingsDialog(QDialog):
     def __init__(self, config: ImgDescGenConfig, parent=None):
         super(SettingsDialog, self).__init__(parent)
         self.setWindowTitle("Settings")
+        self.setWindowIcon(QIcon("gui/icon_1024.png"))
 
         self._config = config
 

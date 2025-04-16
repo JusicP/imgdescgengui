@@ -3,7 +3,7 @@ from PySide6.QtCore import QFileInfo, QDir, Qt
 from PySide6.QtGui import QIcon, QKeySequence, QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, 
                                QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QWidget,
-                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu, QFormLayout, QToolButton)
+                               QPushButton, QGroupBox, QLabel, QLineEdit, QMenu, QFormLayout)
 
 from gui.imagedetails import ImageDetailsWidget
 from gui.schemas.config import ImgDescGenConfig
@@ -18,7 +18,9 @@ class MainWindow(QMainWindow):
 
         self._image_details_widget = None
         self._generation_window = None
-        
+
+        self.setWindowIcon(QIcon("gui/icon_1024.png"))
+
         self.window = QWidget()
         self.setCentralWidget(self.window)
 

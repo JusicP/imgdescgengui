@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QComboBox, QHBoxLayout, QDialogButtonBox,
                                QFormLayout, QLineEdit, QTextEdit, QGroupBox, QPushButton, QFileDialog,
-                               QMessageBox)
+                               QMessageBox, QCheckBox)
 
 from gui.chatbotfactory import create_chatbot
 from gui.schemas.config import ChatbotName, ImgDescGenConfig
-from imgdescgenlib.chatbot.gemini.gemini import GeminiConfig, GeminiClient
+from imgdescgenlib.chatbot.gemini.gemini import GeminiConfig
 from imgdescgenlib.chatbot.exceptions import ChatbotHttpRequestFailed
 
 class SettingsDialog(QDialog):
@@ -30,6 +30,7 @@ class SettingsDialog(QDialog):
         config_schema.chatbots[ChatbotName.GEMINI].api_key = self.api_key_line_edit.text()
         config_schema.chatbots[ChatbotName.GEMINI].image_description_prompt = self.prompt_text_edit.toPlainText()
         config_schema.chatbots[ChatbotName.GEMINI].model_name = self.gemini_model_combobox.itemData(self.gemini_model_combobox.currentIndex())
+        config_schema.chatbots[ChatbotName.GEMINI].force_upload = self.gemini_force_upload_checkbox.isChecked()
 
         config_schema.exiftool_path = self.exiftool_path_line_edit.text()
 
@@ -130,6 +131,10 @@ class SettingsDialog(QDialog):
                 self.refreshGeminiModels()
 
             self.gemini_model_combobox.setCurrentText(gemini_config.model_name.name)
+
+            self.gemini_force_upload_checkbox = QCheckBox("Force upload")
+            self.gemini_force_upload_checkbox.setChecked(gemini_config.force_upload)
+            self.chatbot_form_layout.addRow(self.gemini_force_upload_checkbox)
 
             self.prompt_text_edit = QTextEdit(gemini_config.image_description_prompt)
             self.chatbot_form_layout.addRow(QLabel("Prompt"), self.prompt_text_edit)

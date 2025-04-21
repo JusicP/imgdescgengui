@@ -277,8 +277,6 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         image_list_box.setLayout(layout)
 
-        layout.addWidget(QLabel("Go to File -> Select image directory to get a list of images"))
-
         # create input directory field
         input_directory_layout = QHBoxLayout()
         layout.addLayout(input_directory_layout)
@@ -311,10 +309,12 @@ class MainWindow(QMainWindow):
         self.hLayout.addWidget(image_list_box)
 
         # create selected image list
-        image_list_box = QGroupBox("Selected images")
+        selected_image_list_box = QGroupBox("Selected images")
 
+        selected_images_label = QLabel("Press on checkbox to select image to process. Press Delete key (or open context menu and press Remove button) to remove image from the list.")
+        selected_images_label.setWordWrap(True)
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Press on checkbox to select image to process"))
+        layout.addWidget(selected_images_label)
 
         self.selected_image_list_widget = QListWidget()
         self.selected_image_list_widget.itemClicked.connect(self.imageClicked)
@@ -327,9 +327,9 @@ class MainWindow(QMainWindow):
         image_count_layout.addRow(QLabel("Images: "), self.selected_image_count_label)
         layout.addLayout(image_count_layout)
 
-        image_list_box.setLayout(layout)
+        selected_image_list_box.setLayout(layout)
 
-        self.hLayout.addWidget(image_list_box)
+        self.hLayout.addWidget(selected_image_list_box)
 
         # load images from input dir
         if input_dir:
@@ -337,10 +337,6 @@ class MainWindow(QMainWindow):
 
     def createActions(self):
         root = QFileInfo(__file__).absolutePath()
-
-        self.selectImageDirectoryAct = QAction(QIcon(root + '/images/open.png'), "&Select image directory...",
-                self, shortcut=QKeySequence.Open,
-                statusTip="Select image directory", triggered=self.selectImageDirectory)
 
         self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
                 statusTip="Exit the application", triggered=self.close)
@@ -358,7 +354,6 @@ class MainWindow(QMainWindow):
 
     def createMenus(self):
         self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenu.addAction(self.selectImageDirectoryAct)
         self.fileMenu.addAction(self.settingsAct)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAct)

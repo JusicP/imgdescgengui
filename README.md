@@ -1,6 +1,6 @@
 # Image description generator GUI
 
-![icon](gui/icon_1024.png)
+![icon](gui/icon_256.png)
 
 This is a GUI application that uses [imgdescgen](https://github.com/JusicP/imgdescgen) library to generate image description and write it to image metadata, and [PySide6](https://pypi.org/project/PySide6/) for GUI.
 

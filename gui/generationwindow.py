@@ -105,7 +105,10 @@ class GenerationWindow(QWidget):
             self.log(self.GUI_PREFIX, message)
 
         self.log(self.GUI_PREFIX, f"Working thread finished. Now you can close this window.")
+        
+        self.thread.wait()
         self.thread = None
+
         QApplication.beep()
 
     def run(self, image_list: list[str]):
